@@ -38,21 +38,21 @@ int main (int argc, char *argv[])
 	}
 	else if (argc == 7)
 	{
-		if (argv[3] == '-i')
-			 i = argv[4]
-		else t = argv[4];
-		strcpy(output, argv[6];
+		if (strcmp(argv[3],"-i")==0)
+			 i = atof(argv[4]);
+		else t = atof(argv[4]);
+		strcpy(output, argv[6]);
 	}
 	else
 	{
-		strcpy(output, argv[4];
+		strcpy(output, argv[4]);
 	}
 
 	double ** m = malloc ((k+1)*sizeof(double));
-	for (int i=0; i<k; ++i)
+	for (int count=0; count<k; ++count)
 	{
-		m[i] = malloc(n*sizeof(double));
-		generateRandomDiagonal (n, i, k, m[i]);
+		m[count] = malloc(n*sizeof(double));
+		generateRandomDiagonal (n, count, k, m[count]);
 	}
 	return 0;
 }
