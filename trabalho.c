@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 /***********************
  * N: tamanho do sistema linear
@@ -22,10 +23,11 @@ int generateRandomDiagonal( unsigned int N, unsigned int k, unsigned int kMax, d
   }
 
   return (0);
+}
 
 int main (int argc, char *argv[])
 {
-	int n = k = i = 0;
+	int n, k, i;
 	double t = 0.0;
 	char *output;
 	if (argc == 9)
