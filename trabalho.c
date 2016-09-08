@@ -22,4 +22,27 @@ int generateRandomDiagonal( unsigned int N, unsigned int k, unsigned int kMax, d
   }
 
   return (0);
+
+
+int main (int argc, char *argv[]) {
+	int n = k = i = 0;
+	double t = 0.0;
+	char output[];
+	if (argc == 9) { //todos os parametros
+ 	n = atoi(argv[1]);
+	k = atoi(argv[2]);
+	i = atoi(argv[4]);
+	t = atof(argv[6]);
+	strcpy (output, argv[8]);
+	}
+	else if (argc == 7) {
+		if
+	}
+	
+	if 
+	double *x = malloc (100 * sizeof (double));
+	for (int i=0; i<100; ++i)
+		x[i] = 0.0;
+	generateRandomDiagonal (100, 0, 5, x);
+	return 0;
 }
