@@ -36,25 +36,70 @@ double f(double x)
 
 double *generateResultVector(unsigned int N)
 {
-	double *b = malloc(N*sizeof(double));
+	double *result = malloc(N*sizeof(double));
 	for (int i=0; i < N; ++i)
 	{
-		b[i] = f(i*pi/N);
+		result[i] = f(i*pi/N);
 	}
-	return b;
+	return result;
 }
 
-double *conjugatedGradient(double **A, double *b)
+double *multiply_matrix_array(double **A, double *x, int n, int k)
 {
-	return 0;
+	double *result = malloc(n*sizeof(double));
+	for(int i=0; i<n; ++i)
+        {
+        	for(int j=i-k; j<=i+k; ++j)
+                {
+                        if (j >= 0)&&(j < n)
+                        {
+                                result[i] += A[i+abs(j)][i] * x[j];
+                        }
+                }
+        }
+	return result
+}
 
+double multiply_arrays(double *a, double* b, int n)
+{
+	double result;
+	for(int i=0; i<n; ++i)
+	{
+		result += a[i] * b[i];
+	}
+	return result;
+}
+
+double *conjugatedGradient(double **A, double *x, double *b, int n, int k)
+{
+	double *result, *r, *Ax, *Ar;
+	double s;
+	r = malloc(n*sizeof(double));
+	s = malloc(n*sizeof(double));
+
+	Ax = multiply_matrix_array(A, x);
+
+	for(int i=0; i<n; ++i)
+	{
+		r[i] = b[i] - Ax[i];
+	}
+
+	Ar = multiply_matrix_array(A, r);
+	s = multiply_arrays(r, r)/multiply_arrays(r, Ar);
+
+	for(int i=0; i<n; ++i)
+	{
+		result[i] = x[i] + (s * r[i]);
+	}
+
+	return result;
 }
 
 int main (int argc, char *argv[])
 {
 	int n, k, i;
 	double t = 0.0;
-	double *b;
+	double *b, *x;
 	char *output = malloc(256*sizeof(char));
 
  	n = atoi(argv[1]);
@@ -69,7 +114,7 @@ int main (int argc, char *argv[])
 	else if (argc == 7)
 	{
 		if (strcmp(argv[3],"-i")==0)
-			 i = atof(argv[4]);
+			 i = atoi(argv[4]);
 		else t = atof(argv[4]);
 		strcpy(output, argv[6]);
 	}
@@ -78,8 +123,15 @@ int main (int argc, char *argv[])
 		strcpy(output, argv[4]);
 	}
 
+
+	x = malloc(n*sizeof(double));
+	for (int i=0; i<n; ++i)
+		x[i] = 0.0;
+
 	b = generateResultVector(n);
+
 	double ** A = malloc ((k+1)*sizeof(double *));
+	srand(20162);
 	for (int count=0; count<=k; ++count)
 	{
 		A[count] = (double *)malloc(n*sizeof(double));
@@ -100,6 +152,9 @@ int main (int argc, char *argv[])
 		printf("\n");
 	}
 
-	//conjugatedGradient(A, b);
+	do
+	{
+		x = conjugatedGradient(A, x, b, n, k);
+	}while()||()
 	return 0;
 }
