@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#define pi 3.14
 
 /***********************
  * N: tamanho do sistema linear
@@ -25,11 +27,30 @@ int generateRandomDiagonal( unsigned int N, unsigned int k, unsigned int kMax, d
   return (0);
 }
 
+double f(double x)
+{
+	return((4*pow(pi, 2))*(sin(2*pi*x)+(2*pi*(pi-x))));
+}
+
+
+double *generateResultVector(unsigned int N)
+{
+	double *b = malloc(N*sizeof(double));
+	for (int i=0; i < N; ++i)
+	{
+		b[i] = f(i*pi/N);
+	}
+	return b;
+}
+
+
+
 int main (int argc, char *argv[])
 {
 	int n, k, i;
 	double t = 0.0;
-	char *output;
+	double *b;
+	char *output = malloc(256*sizeof(char));
 	if (argc == 9)
 	{ //todos os parametros
  		n = atoi(argv[1]);
@@ -50,6 +71,7 @@ int main (int argc, char *argv[])
 		strcpy(output, argv[4]);
 	}
 
+	b = generateResultVector(n);
 	double ** m = malloc ((k+1)*sizeof(double));
 	for (int count=0; count<k; ++count)
 	{
