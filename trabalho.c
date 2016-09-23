@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 #define pi 3.14
 
@@ -29,7 +30,7 @@ int generateRandomDiagonal( unsigned int N, unsigned int k, unsigned int kMax, d
 
 double f(double x)
 {
-	return((4*pow(pi, 2))*(sin(2*pi*x)+(2*pi*(pi-x))));
+	return((4*pow(pi, 2))*(sin(2*pi*x)+sin(2*pi*(pi-x))));
 }
 
 
@@ -43,7 +44,11 @@ double *generateResultVector(unsigned int N)
 	return b;
 }
 
+double *conjugatedGradient(double **A, double *b)
+{
+	return 0;
 
+}
 
 int main (int argc, char *argv[])
 {
@@ -51,10 +56,12 @@ int main (int argc, char *argv[])
 	double t = 0.0;
 	double *b;
 	char *output = malloc(256*sizeof(char));
+
+ 	n = atoi(argv[1]);
+	k = atoi(argv[2]);
+
 	if (argc == 9)
 	{ //todos os parametros
- 		n = atoi(argv[1]);
-		k = atoi(argv[2]);
 		i = atoi(argv[4]);
 		t = atof(argv[6]);
 		strcpy (output, argv[8]);
@@ -72,11 +79,27 @@ int main (int argc, char *argv[])
 	}
 
 	b = generateResultVector(n);
-	double ** m = malloc ((k+1)*sizeof(double));
-	for (int count=0; count<k; ++count)
+	double ** A = malloc ((k+1)*sizeof(double *));
+	for (int count=0; count<=k; ++count)
 	{
-		m[count] = malloc(n*sizeof(double));
-		generateRandomDiagonal (n, count, k, m[count]);
+		A[count] = (double *)malloc(n*sizeof(double));
+		generateRandomDiagonal (n, count, k, A[count]);
 	}
+	
+	for(int i = 0; i < n; ++i)
+	{
+		printf("b[%d] = %f\n",i,  b[i]);
+	}
+
+	for(int i=0; i<(k+1); ++i)
+	{
+		for(int j=0; j<n; ++j)
+		{
+			printf("A[%d][%d] = %f", i, j, A[i][j]);
+		}
+		printf("\n");
+	}
+
+	//conjugatedGradient(A, b);
 	return 0;
 }
