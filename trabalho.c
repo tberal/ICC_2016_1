@@ -166,11 +166,11 @@ void save_file(char *filename, double *x,  int i, int n)
 	fprintf (fp, "#\n");
 
 	fprintf (fp, "# Norma Euclidiana do Resíduo e Erro aproximado\n");
-	for(int j=1; j<=i; ++j)
-		fprintf(fp, "# i=%d: %f %f\n", j, res[j], err[j]);
+	for(int j=0; j<i; ++j)
+		fprintf(fp, "# i=%d: %f %f\n", j+1, res[j], err[j]);
 
 	fprintf (fp, "###########\n");
-	fprintf (fp, "%d", n);
+	fprintf (fp, "%d\n", n);
 	for(int j=0; j<n; ++j)
 		fprintf(fp, "%.14g ", x[j]);
 
@@ -209,6 +209,7 @@ int main (int argc, char *argv[])
 	else
 	{
 		strcpy(output, argv[4]);
+		i = n;
 	}
 
 	err = malloc(i*sizeof(double));
