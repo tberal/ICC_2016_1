@@ -1,4 +1,4 @@
 all:
-	gcc -o cgSolver cgSolver.c -c99 -lm
+	@ gcc -o cgSolver cgSolver.c -std=c99 -lm
 clean:
-	rm -rf *.o
+	@ rm -rf *.o

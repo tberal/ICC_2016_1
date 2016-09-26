@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
-#define pi 3.14
+#define M_PI 3.14159265358979323846
 
 double *tm, *tr, *res, *err;
 int count = 0;
 
+// pega o tempo atual
 double timestamp(void)
 {
     struct timeval tp;
@@ -39,22 +40,27 @@ int generateRandomDiagonal( unsigned int N, unsigned int k, unsigned int kMax, d
   return (0);
 }
 
+// f(x) = 4 * pi² * (sin(2 * pi * x) + sin(2 * pi * (pi - x)))
 double f(double x)
 {
-	return((4*pow(pi, 2))*(sin(2*pi*x)+sin(2*pi*(pi-x))));
+	return((4*pow(M_PI, 2))*(sin(2*M_PI*x)+sin(2*M_PI*(M_PI-x))));
 }
 
-
+// gera um vetor com os valores de f(x)
 double *generateResultVector(unsigned int N)
 {
 	double *result = malloc(N*sizeof(double));
 	for (int i=0; i < N; ++i)
 	{
-		result[i] = f(i*pi/N);
+		result[i] = f(i*M_PI/N);
 	}
 	return result;
 }
 
+/*
+	Função para multiplicar elementos de uma matriz NxK+1 por um vetor de N elementos	
+
+*/
 double *multiply_matrix_array(double **A, double *x, int n, int k)
 {
 	int line, offset;
@@ -66,20 +72,15 @@ double *multiply_matrix_array(double **A, double *x, int n, int k)
 			if ((j>=0)&&(j<n))
 			{
 				line = abs(i - j);
-				offset = i + k;
-				//printf("i: %d j: %d line: %d offset:%d\n", i, j, line, offset);
-				if (j < i)
-					result[i] += A[line][i] * x[j];
-				else
-					if(offset<n)
-					result[i] += A[line][i] * x[offset];
-			}
-				
+				offset = j + k;
+				result[i] += A[line][i] * x[j];
+			}	
                 }
         }
 	return result;
 }
 
+// multiplicação de vetores
 double multiply_arrays(double *a, double *b, int n)
 {
 	double result;
@@ -90,6 +91,7 @@ double multiply_arrays(double *a, double *b, int n)
 	return result;
 }
 
+// calcula a norma euclideana
 double euclidean_norm(double *v, unsigned int n)
 {
 	double norm = 0;
@@ -119,9 +121,9 @@ double *conjugatedGradient(double **A, double *x, double *b, int n, int k)
 	res[count] = euclidean_norm(r, n);
 
 	if(count > 0)
-		err[count] = res[count] - res[count-1];
+		err[count] = abs(res[count] - res[count-1]);
 	else
-		err[count] = 0.0;
+		err[count] = abs(res[count]);
 
 	Ar = multiply_matrix_array(A, r, n, k);
 	s = multiply_arrays(r, r, n)/multiply_arrays(r, Ar, n);
@@ -129,9 +131,11 @@ double *conjugatedGradient(double **A, double *x, double *b, int n, int k)
 	{
 		result[i] = x[i] + (s * r[i]);
 	}
+
 	return result;
 }
 
+// encontra o menor valor de um vetor
 double min(double *v, int n)
 {
 	double min = v[0];
@@ -143,6 +147,7 @@ double min(double *v, int n)
 	return min;
 }
 
+// encontra o maior valor de um vetor
 double max(double *v, int n)
 {
 	double max = v[0];
@@ -154,6 +159,7 @@ double max(double *v, int n)
 	return max;
 }
 
+// calcula a média dos valor de um vetor v de tamanho n
 double avg(double *v, int n)
 {
 	double avg = 0.0;
@@ -162,18 +168,19 @@ double avg(double *v, int n)
 	return avg/n;
 }
 
-void save_file(char *filename, double *x,  int i, int n)
+//geração do arquivo
+void save_file(char *filename, double *x, int n)
 {
 	FILE *fp;
 
 	fp = fopen(filename, "w+");
         fprintf (fp, "###########\n");
 	fprintf (fp, "# Tempo método CG: %f %f %f\n", min(tm, n), avg(tm, n), max(tm, n));
-	fprintf (fp, "# Tempo resíduo: %f %f %f", min(tr, n), avg(tr, n), max(tr,n));
+	fprintf (fp, "# Tempo resíduo: %f %f %f\n", min(tr, n), avg(tr, n), max(tr,n));
 	fprintf (fp, "#\n");
 
 	fprintf (fp, "# Norma Euclidiana do Resíduo e Erro aproximado\n");
-	for(int j=0; j<i; ++j)
+	for(int j=0; j<count+1; ++j)
 		fprintf(fp, "# i=%d: %f %f\n", j+1, res[j], err[j]);
 
 	fprintf (fp, "###########\n");
@@ -185,6 +192,7 @@ void save_file(char *filename, double *x,  int i, int n)
 
 }
 
+//programa principal
 int main (int argc, char *argv[])
 {
 	int n, k, i;
@@ -213,12 +221,16 @@ int main (int argc, char *argv[])
 		}
 		strcpy(output, argv[6]);
 	}
-	else
+	else if(argc == 5)
 	{
 		strcpy(output, argv[4]);
 		i = n;
 	}
-
+	else
+	{
+		printf("Parâmetros insuficientes\n");
+		exit(1);
+	}
 	err = malloc(i*sizeof(double));
 	res = malloc(i*sizeof(double));
 	tm = malloc(i*sizeof(double));
@@ -247,7 +259,6 @@ int main (int argc, char *argv[])
 			end = timestamp();
 			tm[count] = end-begin;
 			++count;
-			printf("%d\n", count);
 		}
 	}
 	else
@@ -258,10 +269,12 @@ int main (int argc, char *argv[])
 			x = conjugatedGradient(A, x, b, n, k);
 			end = timestamp();
 			tm[count] = end-begin;
+			if(err[count] <= t)
+				break;
 			++count;
-		}while((count < i)||(err[count] <= t));
+		}while(count < i);
 	}
-	save_file(output, x, i, n);
+	save_file(output, x, n);
 
 	return 0;
 }
