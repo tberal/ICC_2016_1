@@ -1,0 +1,28 @@
+Resolvedor de Sistemas Lineares - Método Gradiente Conjugado
+
+Autores:
+- Luis Augusto Ferraz de Souza  - GRR20103481
+- Thiago Beraldin               - GRR20105218
+
+Arquivos contidos no pacote:
+- cgSolver.c: Arquivo com o código fonte dos algoritmos do resolvedor.
+- makefile: Arquivo MAKE para compilação do código e geração do executável.
+
+
+Descrição geral:
+- Informações de entrada:
+    - N (Dimensão do sistema linear);
+    - nBandas (Número de bandas da Matriz de coeficientes do SL);
+    - I (opcional - Número máximo de iterações que o método deve executar);
+    - T (opcional - Valor de tolerância máximo para o erro aproximado absoluto);
+    - Output (Arquivo de saída que contem a Solução do sistema após executado o Resolvedor);
+
+- Estruturas/Váriaveis relevantes:
+    Matriz A (double **A) - uma matriz de tamanho N x (nBandas/2), que armazena os elementos não nulos das diagonais da matriz A na esquação matricial Ax = b;
+    Vetor b, x (double *b, double *x) - Representam os vetores x e b na fórmula da equação matricial Ax = b;
+    Vetor tm (double *tm) - Armazena o tempo de execução do método a cada iteração método.
+    Vetor tr (double *tr) - Armazena o tempo de execução do calculo do resíduo a cada iteração do método.
+    Vetor err (double *err) - Armazena o erro aproximado de cada iteração do método.
+    Vetor res (double *res) - Armazena a norma euclidiana do Resíduo a cada iteração do método.
+
+- 
