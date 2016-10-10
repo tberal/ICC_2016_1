@@ -61,10 +61,19 @@ double *generateResultVector(unsigned int N)
 	Função para multiplicar elementos de uma matriz NxK+1 por um vetor de N elementos	
 
 */
-double *multiply_matrix_array(double **A, double *x, int n, int k)
+double *multiply_matrix_array(double *A, double *x, int n, int k, double **B)
 {
 	int line, offset;
 	double *result = malloc(n*sizeof(double));
+	double *test = malloc(n*sizeof(double));
+
+  	for(int i=0; i<n; ++i){
+    		result[i] = 0.0;
+		test[i]= 0.0;
+	}
+
+	// Código original para acesso da matriz: Ineficiente pois acessa
+	// elementos da matriz coluna por coluna, assim não aproveitando bem a cache
 	for(int i=0; i<n; ++i)
         {
         	for(int j=i-k; j<=i+k; ++j)
@@ -72,19 +81,61 @@ double *multiply_matrix_array(double **A, double *x, int n, int k)
 			if ((j>=0)&&(j<n))
 			{
 				line = abs(i - j);
-				offset = j + k;
-				result[i] += A[line][i] * x[j];
+				test[i] += B[line][i] * x[j];
 			}	
                 }
         }
+
+	// Otimização da leitura da matriz: acessa elementos da matriz por linha 
+	// ao invés de coluna, afim de melhor aproveitar dados em cache
+	// Otimização de pipeline: Lasso desenrolado para melhor aproveitar 
+	// a paralelização do processador
+	for(int i=0; i<=k; ++i)
+	{
+		for(int j=0; j<n; j+=5)
+		{
+			if(i==0)
+			{
+				result[j] += A[i*n+j] * x[j];
+				result[j+1] += A[i*n+j+1] * x[j+1];
+				result[j+2] += A[i*n+j+2] * x[j+2];
+				result[j+3] += A[i*n+j+3] * x[j+3];
+				result[j+4] += A[i*n+j+4] * x[j+4];
+			}
+			else
+			{
+				if(j >= i)
+				{
+					result[j] += A[i*n+j] * x[j-i];
+					result[j+1] += A[i*n+j+1] * x[j-i+1];
+					result[j+2] += A[i*n+j+2] * x[j-i+2];
+					result[j+3] += A[i*n+j+3] * x[j-i+3];
+					result[j+4] += A[i*n+j+4] * x[j-i+4];
+				}
+				if(j < n-i)
+				{
+					result[j] += A[i*n+j] * x[j+i];
+					result[j+1] += A[i*n+j+1] * x[j+i+1];
+					result[j+2] += A[i*n+j+2] * x[j+i+2];
+					result[j+3] += A[i*n+j+3] * x[j+i+3];
+					result[j+4] += A[i*n+j+4] * x[j+i+4];
+				}
+			}
+		}
+	}
+
+	for(int i=0; i<n; ++i)
+	{
+		printf("res %d: %f test %d: %f\n", i, result[i], i, test[i]);
+	}
 	return result;
 }
 
 // multiplicação de vetores
 double multiply_arrays(double *a, double *b, int n)
 {
-	double result;
-	for(int i=0; i<n; ++i)
+	double result = 0.0;
+  for(int i=0; i<n; ++i)
 	{
 		result += a[i] * b[i];
 	}
@@ -94,13 +145,13 @@ double multiply_arrays(double *a, double *b, int n)
 // calcula a norma euclideana
 double euclidean_norm(double *v, unsigned int n)
 {
-	double norm = 0;
+	double norm = 0.0;
 	for(int i=0; i<n; ++i)
 		norm += pow(v[i], 2);
 	return sqrt(norm);
 }
 
-double *conjugatedGradient(double **A, double *x, double *b, int n, int k)
+double *conjugatedGradient(double *A, double *x, double *b, int n, int k, double ** B)
 {
 	double *result, *r, *Ax, *Ar;
 	double begin, end;
@@ -110,7 +161,7 @@ double *conjugatedGradient(double **A, double *x, double *b, int n, int k)
 	result = malloc(n*sizeof(double));
 	
 	begin = timestamp();
-	Ax = multiply_matrix_array(A, x, n, k);
+	Ax = multiply_matrix_array(A, x, n, k, B);
 	for(int i=0; i<n; ++i)
 	{
 		r[i] = b[i] - Ax[i];
@@ -121,17 +172,19 @@ double *conjugatedGradient(double **A, double *x, double *b, int n, int k)
 	res[count] = euclidean_norm(r, n);
 
 	if(count > 0)
-		err[count] = abs(res[count] - res[count-1]);
+		err[count] = fabs(res[count] - res[count-1]);
 	else
-		err[count] = abs(res[count]);
+		err[count] = fabs(res[count]);
 
-	Ar = multiply_matrix_array(A, r, n, k);
+	Ar = multiply_matrix_array(A, r, n, k, B);
 	s = multiply_arrays(r, r, n)/multiply_arrays(r, Ar, n);
 	for(int i=0; i<n; ++i)
 	{
 		result[i] = x[i] + (s * r[i]);
 	}
-
+  free (Ax);
+  free (Ar);
+  free (r);
 	return result;
 }
 
@@ -174,13 +227,13 @@ void save_file(char *filename, double *x, int n)
 	FILE *fp;
 
 	fp = fopen(filename, "w+");
-        fprintf (fp, "###########\n");
-	fprintf (fp, "# Tempo método CG: %f %f %f\n", min(tm, n), avg(tm, n), max(tm, n));
-	fprintf (fp, "# Tempo resíduo: %f %f %f\n", min(tr, n), avg(tr, n), max(tr,n));
+  fprintf (fp, "###########\n");
+	fprintf (fp, "# Tempo método CG: %f %f %f\n", min(tm, count), avg(tm, count), max(tm, count));
+	fprintf (fp, "# Tempo resíduo: %f %f %f\n", min(tr, count), avg(tr, count), max(tr,count));
 	fprintf (fp, "#\n");
 
 	fprintf (fp, "# Norma Euclidiana do Resíduo e Erro aproximado\n");
-	for(int j=0; j<count+1; ++j)
+	for(int j=0; j<count; ++j)
 		fprintf(fp, "# i=%d: %f %f\n", j+1, res[j], err[j]);
 
 	fprintf (fp, "###########\n");
@@ -242,20 +295,28 @@ int main (int argc, char *argv[])
 
 	b = generateResultVector(n);
 
-	double ** A = malloc ((k+1)*sizeof(double *));
+	double * A = malloc(((k+1)*n)*sizeof(double));
+	double * aux = malloc(n*sizeof(double));
+	double ** B = malloc ((k+1)*sizeof(double *));
 	srand(20162);
-	for (int count=0; count<=k; ++count)
+	for (int i=0; i<=k; ++i)
 	{
-		A[count] = (double *)malloc(n*sizeof(double));
-		generateRandomDiagonal (n, count, k, A[count]);
+		B[i] = malloc(n*sizeof(double));
+		generateRandomDiagonal (n, i, k, aux);
+		for (int j=0; j<n; ++j)
+		{
+			A[i*n+j] = aux[j];
+			B[i][j] = aux[j];
+			aux[j] = 0.0;
+		}
 	}
-	
+
 	if (t==0.0)
 	{
 		while(count < i)
 		{
 			begin = timestamp();
-			x = conjugatedGradient(A, x, b, n, k);
+			x = conjugatedGradient(A, x, b, n, k, B);
 			end = timestamp();
 			tm[count] = end-begin;
 			++count;
@@ -266,16 +327,25 @@ int main (int argc, char *argv[])
 		do
 		{	
 			begin = timestamp();
-			x = conjugatedGradient(A, x, b, n, k);
+			x = conjugatedGradient(A, x, b, n, k, B);
 			end = timestamp();
 			tm[count] = end-begin;
 			if(err[count] <= t)
+			{
+				++count;
 				break;
+			}
 			++count;
 		}while(count < i);
 	}
 	save_file(output, x, n);
-
+  free (A);
+  free (x);
+  free (b);
+  free (err);
+  free (res);
+  free (tm);
+  free (tr);
 	return 0;
 }
 

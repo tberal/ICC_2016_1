@@ -1,0 +1,29 @@
+Resolvedor de Sistemas Lineares - Método Gradiente Conjugado
+
+Autores:
+- Luis Augusto Ferraz de Souza  - GRR20103481
+- Thiago Beraldin               - GRR20105218
+
+Arquivos contidos no pacote:
+- cgSolver.c: Arquivo com o código fonte dos algoritmos do resolvedor.
+- makefile: Arquivo MAKE para compilação do código e geração do executável.
+
+
+Descrição geral:
+- Informações de entrada:
+    - N (Dimensão do sistema linear);
+    - nBandas (Número de bandas da Matriz de coeficientes do SL);
+    - I (opcional - Número máximo de iterações que o método deve executar);
+    - T (opcional - Valor de tolerância máximo para o erro aproximado absoluto);
+    - Output (Arquivo de saída que contem a Solução do sistema após executado o Resolvedor);
+
+- Estruturas/Váriaveis relevantes:
+    Matriz A (double **A) - uma matriz de tamanho N x nBandas + 1, que armazena os elementos não nulos das diagonais da matriz A na esquação matricial Ax = b, onde cada linha representa uma diagonal não nula da matriz original, e consequentemente, cada coluna representa uma linha da matriz de forma compacta.
+    Vetor b, x (double *b, double *x) - Representam os vetores x e b na fórmula da equação matricial Ax = b;
+    Vetor tm (double *tm) - Armazena o tempo de execução do método a cada iteração método.
+    Vetor tr (double *tr) - Armazena o tempo de execução do calculo do resíduo a cada iteração do método.
+    Vetor err (double *err) - Armazena o erro aproximado de cada iteração do método.
+    Vetor res (double *res) - Armazena a norma euclidiana do Resíduo a cada iteração do método.
+
+Sobre o Algoritmo:
+- Optamos pelo uso de uma matriz A descrita acima, pois como a matriz é simetrica, não há necessidade representar os valores de ambas as diagonais da banda, basta armazenar estes valores uma vez. O desafio apresentado por essa representação surgiu durante o desenvolvimento do método para multiplicação desta matriz pelo vetor de incógnitas. Para reproduzir uma multiplicação de uma matriz N X N por uma matriz N X 1 utilizando uma matriz N X nBandas + 1, nós fizemos nosso algoritmo percorrer todas as linhas da matriz a partir do elemento i da diagonal principal naquela linha, e caminhando pela linha a partir da posição i-k até a posição i+k, desta forma acessamos apenas os elementos que fazem parte da banda da matriz e os elementos de x que serão multiplicados de fato.
