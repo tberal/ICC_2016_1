@@ -67,23 +67,27 @@ double *multiply_matrix_array(double *A, double *x, int k, int size)
 {
 	int line, offset;
 	double *result = malloc(size*sizeof(double));
+        double *test = malloc(size*sizeof(double));
+
+        for(int i=0; i<size; ++i)
+            test[i] = 0.0;
 
   	for(int i=0; i<size; ++i)
-    		result[i] = 0.0;
+    	    result[i] = 0.0;
 
 	// Código original para acesso da matriz: Ineficiente pois acessa
 	// elementos da matriz coluna por coluna, assim não aproveitando bem a cache
-	/*for(int i=0; i<n; ++i)
+	for(int i=0; i<size; ++i)
         {
         	for(int j=i-k; j<=i+k; ++j)
                 {
-			if ((j>=0)&&(j<n))
+			if ((j>=0)&&(j<size))
 			{
 				line = abs(i - j);
-				result[i] += A[line*n+j] * x[j];
+				test[i] += A[line*size+j] * x[j];
 			}
                 }
-        }*/
+        }
 
 	// Otimização da leitura da matriz: acessa elementos da matriz por linha
 	// ao invés de coluna, afim de melhor aproveitar dados em cache
@@ -91,41 +95,44 @@ double *multiply_matrix_array(double *A, double *x, int k, int size)
 	// a paralelização do processador
 	for(int i=0; i<=k; ++i)
 	{
-		for(int j=0; j<size; j+=5)
+		for(int j=0; j<size; j++)
 		{
 			if(i==0)
 			{
 				result[j] += A[i*size+j] * x[j];
-				result[j+1] += A[i*size+j+1] * x[j+1];
+				/*result[j+1] += A[i*size+j+1] * x[j+1];
 				result[j+2] += A[i*size+j+2] * x[j+2];
 				result[j+3] += A[i*size+j+3] * x[j+3];
-				result[j+4] += A[i*size+j+4] * x[j+4];
+				result[j+4] += A[i*size+j+4] * x[j+4];*/
 			}
 			else
 			{
-				if(j >= i)
+				if(j-i >= 0)
 					result[j] += A[i*size+j] * x[j-i];
-				if(j+1 >= i)
+				/*if(j+1 >= i)
 					result[j+1] += A[i*size+j+1] * x[j-i+1];
 				if(j+2 >= i)
 					result[j+2] += A[i*size+j+2] * x[j-i+2];
 				if(j+3 >= i)
 					result[j+3] += A[i*size+j+3] * x[j-i+3];
 				if(j+4 >= i)
-					result[j+4] += A[i*size+j+4] * x[j-i+4];
-				if(j < size-i)
+					result[j+4] += A[i*size+j+4] * x[j-i+4];*/
+				if(j+i < size)
 					result[j] += A[i*size+j] * x[j+i];
-				if(j+1 < size-i)
+				/*if(j+1 < size-i)
 					result[j+1] += A[i*size+j+1] * x[j+i+1];
 				if(j+2 < size-i)
 					result[j+2] += A[i*size+j+2] * x[j+i+2];
 				if(j+3 < size-i)
 					result[j+3] += A[i*size+j+3] * x[j+i+3];
 				if(j+4 < size-i)
-					result[j+4] += A[i*size+j+4] * x[j+i+4];
+					result[j+4] += A[i*size+j+4] * x[j+i+4];*/
 			}
 		}
 	}
+        for(int i=0; i<size; ++i)
+            printf("test[%d]: %f result[%d]: %f\n", i, test[i], i, result[i]);
+
 	return result;
 }
 
