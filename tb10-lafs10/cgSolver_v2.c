@@ -63,10 +63,10 @@ double *generateResultVector(unsigned int N, int size)
 	Função para multiplicar elementos de uma matriz NxK+1 por um vetor de N elementos
 
 */
-double *multiply_matrix_array(double *A, double *x, int k, int size)
+void multiply_matrix_array(double *A, double *result, double *x, int k, int size)
 {
 	int line, offset;
-	double *result = malloc(size*sizeof(double));
+	//double *result = malloc(size*sizeof(double));
         double *test = malloc(size*sizeof(double));
 
         for(int i=0; i<size; ++i)
@@ -112,8 +112,6 @@ double *multiply_matrix_array(double *A, double *x, int k, int size)
 	}
         for(int i=0; i<size; ++i)
             printf("test[%d]: %f result[%d]: %f\n", i, test[i], i, result[i]);
-
-	return result;
 }
 
 // multiplicação de vetores
@@ -152,11 +150,13 @@ double *conjugatedGradient(double *A, double *x, double *b, int k, int size)
 	double begin, end;
 	double s;
 
+	Ax = malloc(size*sizeof(double));
+	Ar = malloc(size*sizeof(double));
 	r = malloc(size*sizeof(double));
 	result = malloc(size*sizeof(double));
 
 	begin = timestamp();
-	Ax = multiply_matrix_array(A, x, k, size);
+	multiply_matrix_array(A, Ax, x, k, size);
 	for(int i=0; i<size; i+=4)
 	{
 		r[i] = b[i] - Ax[i];
@@ -174,7 +174,7 @@ double *conjugatedGradient(double *A, double *x, double *b, int k, int size)
 	else
 		err[count] = fabs(res[count]);
 
-	Ar = multiply_matrix_array(A, r, k, size);
+	multiply_matrix_array(A, Ar, r, k, size);
 	s = multiply_arrays(r, r, size)/multiply_arrays(r, Ar, size);
 	for(int i=0; i<size; i+=4)
 	{
@@ -186,9 +186,6 @@ double *conjugatedGradient(double *A, double *x, double *b, int k, int size)
 	free (Ax);
 	free (Ar);
 	free (r);
-	Ax = NULL;
-	Ar =NULL;
-	r = NULL;
 
 	return result;
 }
@@ -356,6 +353,7 @@ int main (int argc, char *argv[])
 	}
 	save_file(output, x, n);
 
+	printf("olar\n");
         free (A);
         free (x);
         free (b);
