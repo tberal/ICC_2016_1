@@ -63,36 +63,15 @@ double *generateResultVector(unsigned int N, int size)
 	Função para multiplicar elementos de uma matriz NxK+1 por um vetor de N elementos
 
 */
-void multiply_matrix_array(double *A, double *result, double *x, int k, int size)
+inline void multiply_matrix_array(double *A, double *result, double *x, int k, int size)
 {
 	int line, offset;
-	//double *result = malloc(size*sizeof(double));
-        double *test = malloc(size*sizeof(double));
-
-        for(int i=0; i<size; ++i)
-            test[i] = 0.0;
 
   	for(int i=0; i<size; ++i)
     	    result[i] = 0.0;
 
-	// Código original para acesso da matriz: Ineficiente pois acessa
-	// elementos da matriz coluna por coluna, assim não aproveitando bem a cache
-	for(int i=0; i<size; ++i)
-        {
-        	for(int j=i-k; j<=i+k; ++j)
-                {
-			if ((j>=0)&&(j<size))
-			{
-				line = abs(i - j);
-				test[i] += A[line*size+j] * x[j];
-			}
-                }
-        }
-
-	// Otimização da leitura da matriz: acessa elementos da matriz por linha
-	// ao invés de coluna, afim de melhor aproveitar dados em cache
-	// Otimização de pipeline: Lasso desenrolado para melhor aproveitar
-	// a paralelização do processador
+	// Otimização: faz operação com os elementos da matriz linha por linha ao invés de coluna a coluna
+	// objetivo: melhor utilização da cache
 	for(int i=0; i<=k; ++i)
 	{
 		for(int j=0; j<size; j++)
@@ -110,23 +89,29 @@ void multiply_matrix_array(double *A, double *result, double *x, int k, int size
 			}
 		}
 	}
-        for(int i=0; i<size; ++i)
-            printf("test[%d]: %f result[%d]: %f\n", i, test[i], i, result[i]);
 }
 
 // multiplicação de vetores
-double multiply_arrays(double *a, double *b, int size)
+inline double multiply_arrays(double *a, double *b, int size)
 {
 	double result = 0.0;
+	int i = 0;
         // Otimização: Loop desenrolado para melhor aproveitar o
         // paralelismo do processador
-        for(int i=0; i<size; i+=4)
+        while(size - i > 4)
 	{
 		result += a[i] * b[i];
 		result += a[i+1] * b[i+1];
 		result += a[i+2] * b[i+2];
 		result += a[i+3] * b[i+3];
+		i+=4;
 	}
+	while(i < size)
+	{
+		result += a[i] * b[i];
+		++i;
+	}
+
 	return result;
 }
 
@@ -134,13 +119,22 @@ double multiply_arrays(double *a, double *b, int size)
 double euclidean_norm(double *v, unsigned int size)
 {
 	double norm = 0.0;
-	for(int i=0; i<size; i+=4)
+
+	int i =0;
+	while(size - i > 4)
         {
 		norm += v[i] * v[i];
 		norm += v[i+1] * v[i+1];
 		norm += v[i+2] * v[i+2];
 		norm += v[i+3] * v[i+3];
+		i+=4;
         }
+	while(i < size)
+	{
+		norm +=v[i]*v[i];
+		++i;
+	}
+
 	return sqrt(norm);
 }
 
@@ -150,20 +144,29 @@ double *conjugatedGradient(double *A, double *x, double *b, int k, int size)
 	double begin, end;
 	double s;
 
-	Ax = malloc(size*sizeof(double));
-	Ar = malloc(size*sizeof(double));
-	r = malloc(size*sizeof(double));
-	result = malloc(size*sizeof(double));
+	Ax = (double *)malloc(size*sizeof(double));
+	Ar = (double *)malloc(size*sizeof(double));
+	r = (double *)malloc(size*sizeof(double));
+	result = (double *)malloc(size*sizeof(double));
 
 	begin = timestamp();
 	multiply_matrix_array(A, Ax, x, k, size);
-	for(int i=0; i<size; i+=4)
+
+	int i = 0;
+	while(size - i > 4)
 	{
 		r[i] = b[i] - Ax[i];
 		r[i+1] = b[i+1] - Ax[i+1];
 		r[i+2] = b[i+2] - Ax[i+2];
 		r[i+3] = b[i+3] - Ax[i+3];
+		i+=4;
 	}
+	while(i < size)
+	{
+		r[i] = b[i] - Ax[i];
+		++i;
+	}
+
 	end = timestamp();
 
 	tr[count] = end - begin;
@@ -176,13 +179,22 @@ double *conjugatedGradient(double *A, double *x, double *b, int k, int size)
 
 	multiply_matrix_array(A, Ar, r, k, size);
 	s = multiply_arrays(r, r, size)/multiply_arrays(r, Ar, size);
-	for(int i=0; i<size; i+=4)
+
+	i = 0;
+	while(size - i > 4)
 	{
 		result[i] = x[i] + (s * r[i]);
 		result[i+1] = x[i+1] + (s * r[i+1]);
 		result[i+2] = x[i+2] + (s * r[i+2]);
 		result[i+3] = x[i+3] + (s * r[i+3]);
+		i+=4;
 	}
+	while(i < size)
+	{
+		result[i] = x[i] + (s * r[i]);
+		++i;
+	}
+
 	free (Ax);
 	free (Ar);
 	free (r);
@@ -229,6 +241,7 @@ void save_file(char *filename, double *x, int n)
 	FILE *fp;
 
 	fp = fopen(filename, "w+");
+
         fprintf (fp, "###########\n");
 	fprintf (fp, "# Tempo método CG: %f %f %f\n", min(tm, count), avg(tm, count), max(tm, count));
 	fprintf (fp, "# Tempo resíduo: %f %f %f\n", min(tr, count), avg(tr, count), max(tr,count));
@@ -244,7 +257,6 @@ void save_file(char *filename, double *x, int n)
 		fprintf(fp, "%.14g ", x[j]);
 
 	fclose(fp);
-
 }
 
 //programa principal
@@ -254,7 +266,7 @@ int main (int argc, char *argv[])
 	double t = 0.0;
 	double *b, *x;
 	double begin, end;
-	char *output = malloc(256*sizeof(char));
+	char *output = (char *)malloc(256*sizeof(char));
 
  	n = atoi(argv[1]);
 	k = atoi(argv[2]);
@@ -286,10 +298,10 @@ int main (int argc, char *argv[])
 		printf("Parâmetros insuficientes\n");
 		exit(1);
 	}
-	err = malloc(i*sizeof(double));
-	res = malloc(i*sizeof(double));
-	tm = malloc(i*sizeof(double));
-	tr = malloc(i*sizeof(double));
+	err = (double *)malloc(i*sizeof(double));
+	res = (double *)malloc(i*sizeof(double));
+	tm = (double *)malloc(i*sizeof(double));
+	tr = (double *)malloc(i*sizeof(double));
 
         int size;
         if (n%5 !=0)
@@ -297,14 +309,14 @@ int main (int argc, char *argv[])
         else
             size = n;
 
-	x = malloc(size*sizeof(double));
+	x = (double*)malloc(size*sizeof(double));
 	for (int i=0; i<size; ++i)
 		x[i] = 0.0;
 
 	b = generateResultVector(n, size);
 
-	double * A = malloc((k+1)*size*sizeof(double));
-	double * aux = malloc(n*sizeof(double));
+	double * A = (double *)malloc((k+1)*size*sizeof(double));
+	double * aux = (double *)malloc(n*sizeof(double));
 
 	srand(20162);
 
@@ -353,7 +365,6 @@ int main (int argc, char *argv[])
 	}
 	save_file(output, x, n);
 
-	printf("olar\n");
         free (A);
         free (x);
         free (b);
