@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
+#include <likwid.h>
 #define M_PI 3.14159265358979323846
 
 double *tm, *tr, *res, *err;
@@ -69,9 +70,10 @@ inline void multiply_matrix_array(double *A, double *result, double *x, int k, i
 
   	for(int i=0; i<size; ++i)
     	    result[i] = 0.0;
-
 	// Otimização: faz operação com os elementos da matriz linha por linha ao invés de coluna a coluna
 	// objetivo: melhor utilização da cache
+	LIKWID_MARKER_INIT;
+	LIKWID_MARKER_START("MMV");
 	for(int i=0; i<=k; ++i)
 	{
 		for(int j=0; j<size; j++)
@@ -89,6 +91,8 @@ inline void multiply_matrix_array(double *A, double *result, double *x, int k, i
 			}
 		}
 	}
+	LIKWID_MARKER_STOP("MMV");
+	LIKWID_MARKER_CLOSE;
 }
 
 // multiplicação de vetores
@@ -98,6 +102,8 @@ inline double multiply_arrays(double *a, double *b, int size)
 	int i = 0;
         // Otimização: Loop desenrolado para melhor aproveitar o
         // paralelismo do processador
+	LIKWID_MARKER_INIT;
+	LIKWID_MARKER_START("MVV");
         while(size - i > 4)
 	{
 		result += a[i] * b[i];
@@ -111,6 +117,8 @@ inline double multiply_arrays(double *a, double *b, int size)
 		result += a[i] * b[i];
 		++i;
 	}
+	LIKWID_MARKER_STOP("MVV");
+	LIKWID_MARKER_CLOSE;
 
 	return result;
 }

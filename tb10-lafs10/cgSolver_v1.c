@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
+#include <likwid.h>
 #define M_PI 3.14159265358979323846
 
 double *tm, *tr, *res, *err;
@@ -65,9 +66,11 @@ double *multiply_matrix_array(double **A, double *x, int n, int k)
 {
 	int line, offset;
 	double *result = malloc(n*sizeof(double));
-  for(int i=0; i<n; ++i)
-    result[i] = 0.0;
+  	for(int i=0; i<n; ++i)
+    		result[i] = 0.0;
 
+	LIKWID_MARKER_INIT;
+	LIKWID_MARKER_START("MMV");
 	for(int i=0; i<n; ++i)
         {
         	for(int j=i-k; j<=i+k; ++j)
@@ -80,6 +83,8 @@ double *multiply_matrix_array(double **A, double *x, int n, int k)
 			}	
                 }
         }
+	LIKWID_MARKER_STOP("MMV");
+	LIKWID_MARKER_CLOSE;
 	return result;
 }
 
@@ -87,10 +92,16 @@ double *multiply_matrix_array(double **A, double *x, int n, int k)
 double multiply_arrays(double *a, double *b, int n)
 {
 	double result = 0.0;
-  for(int i=0; i<n; ++i)
-	{
-		result += a[i] * b[i];
-	}
+
+	LIKWID_MARKER_INIT;
+	LIKWID_MARKER_START("MVV");
+  	for(int i=0; i<n; ++i)
+		{
+			result += a[i] * b[i];
+		}
+	LIKWID_MARKER_STOP("MVV");
+	LIKWID_MARKER_CLOSE;
+
 	return result;
 }
 
